@@ -2,10 +2,8 @@ FROM ubuntu:16.04
 MAINTAINER Timur Garifullin
 RUN apt-get update
 RUN apt-get -y install gcc
-RUN apt-get -y install git
-RUN git clone https://github.com/init/http-test-suite.git
-ADD ./ ./http-test-suite
-WORKDIR ./http-test-suite
-RUN gcc server.c -o server
+RUN apt-get -y install libevent-dev
+ADD . .
+RUN gcc -o server *.c -lpthread -levent
 EXPOSE 80
 CMD ./server
