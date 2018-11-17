@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "workqueue.h"
 
 #define LINKED_LIST_ADD(item, list) { \
@@ -45,6 +46,8 @@ static void *worker_function(void *ptr) {
 			LINKED_LIST_REMOVE(job, worker->workqueue->waiting_jobs);
 		}
 		pthread_mutex_unlock(&worker->workqueue->jobs_mutex);
+
+		usleep(5);
 
 		/* If we didn't get a job, then there's nothing to do at this time. */
 		if (job == NULL) continue;
