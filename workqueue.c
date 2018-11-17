@@ -47,7 +47,7 @@ static void *worker_function(void *ptr) {
 		}
 		pthread_mutex_unlock(&worker->workqueue->jobs_mutex);
 
-		usleep(5);
+		usleep(500);
 
 		/* If we didn't get a job, then there's nothing to do at this time. */
 		if (job == NULL) continue;
