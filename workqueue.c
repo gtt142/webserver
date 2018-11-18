@@ -23,18 +23,15 @@ static void *worker_function(void *ptr) {
 	printf("worker function started\n");
 
 	while (1) {
-		/* Wait until we get notified. */
 		printf("waiting to be notified\n");
 		pthread_mutex_lock(&worker->workqueue->jobs_mutex);
 		printf("thread ready\n");
 		while (worker->workqueue->waiting_jobs == NULL) {
-			/* If we're supposed to terminate, break out of our continuous loop. */
 			if (worker->terminate) break;
 			printf("condition wait\n");
 			pthread_cond_wait(&worker->workqueue->jobs_cond, &worker->workqueue->jobs_mutex);
 		}
 
-		/* If we're supposed to terminate, break out of our continuous loop. */
 		if (worker->terminate) {
 			pthread_mutex_unlock(&worker->workqueue->jobs_mutex);
 			break;
@@ -46,13 +43,10 @@ static void *worker_function(void *ptr) {
 			LINKED_LIST_REMOVE(job, worker->workqueue->waiting_jobs);
 		}
 		pthread_mutex_unlock(&worker->workqueue->jobs_mutex);
-
 		usleep(500);
 
-		/* If we didn't get a job, then there's nothing to do at this time. */
 		if (job == NULL) continue;
 
-		/* Execute the job. */
 		printf("job started\n");
 		job->job_function(job);
 	}
