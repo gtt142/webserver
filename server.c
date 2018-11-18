@@ -189,16 +189,14 @@ void eventcb(struct bufferevent *bev, short events, void *arg)
     //bufferevent_free(bev);
 }
 
-//void release_client(struct bufferevent *bev, short what, void *arg){
-//   client_t *client = (client_t *)arg;
-//    closeClient(client);
-//}
 
 static void server_job_function(struct job *job) {
     printf("WORKER START DOING JOB\n");
 	client_t *client = (client_t *)job->user_data;
 
-	event_base_loop(client->evbase, EVLOOP_NONBLOCK);
+	// struct timeval timer = {0, 10000};
+	// bufferevent_set_timeouts(client->buf_ev, &timer, &timer);	
+	event_base_dispatch(client->evbase);
     printf("WORKER AFTER EVENT BASE LOOP\n");
 	closeAndFreeClient(client);
     printf("CLIENT CLOSED\n");
@@ -321,7 +319,6 @@ int start(void) {
 
 	int sin;
 	struct sockaddr_in s_addr;
-	int reuseaddr_on;
 
 	/* Set signal handlers */
 	sigset_t sigset;
@@ -342,6 +339,8 @@ int start(void) {
 		err(1, "listen failed");
 	}
 
+	setsockopt(sin, SOL_SOCKET, SO_REUSEADDR, &s_addr, sizeof(s_addr));
+
 	memset(&s_addr, 0, sizeof(s_addr));
 	s_addr.sin_family = AF_INET;
 	s_addr.sin_addr.s_addr = INADDR_ANY;
@@ -355,8 +354,6 @@ int start(void) {
 		err(1, "listen failed");
 	}
 
-    reuseaddr_on = 1;
-	setsockopt(sin, SOL_SOCKET, SO_REUSEADDR, &reuseaddr_on, sizeof(reuseaddr_on));
 
 	/* Set the socket to non-blocking, this is essential in event
 	 * based programming with libevent. */
