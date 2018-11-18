@@ -92,17 +92,16 @@ static void closeAndFreeClient(client_t *client) {
  */
 void buffered_on_read(struct bufferevent *bev, void *arg) {
 
-    printf("START BUFFEREVENT READING\n");
+    printf("start bufferevent reading\n");
 
 	client_t *client = (client_t *)arg;
 	http_t http_request;
     int response_id;
 
     char response[RESPONSE_BUFSIZE];
-    printf("BEFORE HTTP PARSE\n");
+    printf("http parsing\n");
 
     response_id = http_parse(&http_request, bufferevent_get_input(bev), root_dir);
-    printf("AFTER HTTP PARSE\n");
     switch (response_id) {
         case NOT_ALLOWED_HTTP_METHOD :
             create_response("405", "Not Implemented", response);
@@ -138,7 +137,7 @@ void buffered_on_read(struct bufferevent *bev, void *arg) {
             break;
     }
 
-    printf("BEFORE CONTENT-LENGTH\n");
+    printf("content-length\n");
 
     if (response_id == ALL_OK) {
         sprintf(response + strlen(response), "Content-Length: %lu\r\n", http_request.filesize);
@@ -146,22 +145,20 @@ void buffered_on_read(struct bufferevent *bev, void *arg) {
     }
 
     evbuffer_add(client->output_buffer, response, strlen(response));
-    printf("CLIENT OUTPUT BUFFER FILLED WITH RESPONSE\n");
+    printf("client buffer filled\n");
     if (strcmp(http_request.method, "GET") == 0 && response_id == ALL_OK) {
-        printf("INSIGHT GET 200 HEADER CONDITION\n");
         int fd = open(http_request.filename, O_RDONLY, 0);
         evbuffer_add_file(client->output_buffer, fd, 0, http_request.filesize);
-        printf("CLIENT OUTPUT BUFFER FILLED WITH FILE WITH SIZE %zu\n", http_request.filesize);
     }
     if(strcmp(http_request.method, "HEAD") == 0){
-        printf("THIS IS HEAD\n%s", response);
+        printf("HEAD request\n%s", response);
     }
     bufferevent_disable(bev, EV_READ);
     bufferevent_enable(bev, EV_WRITE);
 	/* Send the results to the client.  This actually only queues the results for sending.
 	 * Sending will occur asynchronously, handled by libevent. */
 	if (bufferevent_write_buffer(bev, client->output_buffer) != 0) {
-        printf("BUFFEREVENT ERROR\n");
+        printf("bufferevent error\n");
         closeClient(client);
     }
 
@@ -191,15 +188,14 @@ void eventcb(struct bufferevent *bev, short events, void *arg)
 
 
 static void server_job_function(struct job *job) {
-    printf("WORKER START DOING JOB\n");
+    printf("start job\n");
 	client_t *client = (client_t *)job->user_data;
 
 	// struct timeval timer = {0, 10000};
 	// bufferevent_set_timeouts(client->buf_ev, &timer, &timer);	
 	event_base_dispatch(client->evbase);
-    printf("WORKER AFTER EVENT BASE LOOP\n");
 	closeAndFreeClient(client);
-    printf("CLIENT CLOSED\n");
+    printf("closing client\n");
 	free(job);
 }
 
@@ -209,7 +205,7 @@ static void server_job_function(struct job *job) {
  */
 void on_accept(int fd, short ev, void *arg) {
 
-    printf("ACCEPT CONNECTION\n");
+    printf("on_accept start\n");
 	int client_fd;
 	struct sockaddr_in client_addr;
 	socklen_t client_len = sizeof(client_addr);
@@ -252,8 +248,6 @@ void on_accept(int fd, short ev, void *arg) {
 		return;
 	}
 
-    printf("BEFORE SOCKET NEW\n");
-
 	/* Create the buffered event.*/
     if ((client->buf_ev = bufferevent_socket_new(client->evbase, client->fd, BEV_OPT_CLOSE_ON_FREE )) == NULL) {
         warn("client bufferevent creation failed");
@@ -261,11 +255,7 @@ void on_accept(int fd, short ev, void *arg) {
         return;
     }
 
-    printf("AFTER SOCKET NEW\n");
-
     bufferevent_setcb(client->buf_ev, buffered_on_read, buffered_on_write, eventcb, client);
-
-    printf("AFTER SET CALLBACK\n");
 
 	/* We have to enable it before our callbacks will be
 	 * called. */
@@ -274,8 +264,6 @@ void on_accept(int fd, short ev, void *arg) {
         return;
     };
 
-    printf("AFTER ENABLE\n");
-
 
 	/* Create a job object and add it to the work queue. */
 	if ((job = malloc(sizeof(*job))) == NULL) {
@@ -283,16 +271,13 @@ void on_accept(int fd, short ev, void *arg) {
 		closeAndFreeClient(client);
 		return;
 	}
-
-    printf("AFTER ALLOCATE JOB\n");
     job->job_function = server_job_function;
 	job->user_data = client;
 
-    printf("BEFORE ADD JOB\n");
 
 	workqueue_add_job(workqueue, job);
 
-    printf("AFTER ADD JOB\n");
+    printf("job added\n");
 
 }
 

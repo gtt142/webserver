@@ -45,7 +45,6 @@ int http_parse(http_t *http_request, struct evbuffer *client_buffer, char *root_
     struct stat sbuf;     /* file status */
     size_t line_size = LINE_BUFSIZE;
 
-    printf("HTTP PARSE START\n");
 
     /* get the HTTP request line */
     if(strcpy(http_request->buf, evbuffer_readln(event_buffer, &line_size, EVBUFFER_EOL_CRLF)) == NULL) {
@@ -56,7 +55,6 @@ int http_parse(http_t *http_request, struct evbuffer *client_buffer, char *root_
         return PARSE_ERROR;
     }
 
-    printf("GETTING HTTP REQUEST\n");
 
 
     /* server only supports the GET and HEAD methods */
@@ -64,7 +62,6 @@ int http_parse(http_t *http_request, struct evbuffer *client_buffer, char *root_
       return NOT_ALLOWED_HTTP_METHOD;
     }
 
-    printf("ALLOWED METHODS\n");
 
     /* parse the uri */
     if (!strstr(http_request->uri, "cgi-bin")) {
